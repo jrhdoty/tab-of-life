@@ -1,12 +1,14 @@
 body, html {
   height:100%;
   width:100%;
-  padding: none;
-  margin: none;
+  padding: 0;
+  margin: 0;
 }
 
 canvas {
   position:absolute;
   margin-left:auto;
   margin-right:auto;
+  padding: none;
+
 }

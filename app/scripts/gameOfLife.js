@@ -1,24 +1,200 @@
 'use strict';
 
+var Cell = function(status, neighbors){
+  this.nextState    = status || false;
+  this.currentState = status || false;
+
+  this.nextActiveNeighbors    = 0;
+  this.currentActiveNeighbors = neighbors || 0;
+};
+
+var Grid = function(x, y){
+  //add padding to borders
+  x+=2;
+  y+=2;
+  this.dimX = x;
+  this.dimY = y;
+  this.grid = Array.apply(null, Array(y)).map(function(){
+    return Array.apply(null, Array(x)).map(function(){
+      return new Cell(false, 0);
+  });});
+};
+
+//used to initialize values
+Grid.prototype.setCell = function(x, y){
+  //simplify interface by taking borders into account internally
+  x++;
+  y++;
+
+  //update neighbor's count of neighbors
+  //row above
+  this.grid[y-1][x-1].currentActiveNeighbors++;
+  this.grid[y-1][x].currentActiveNeighbors++;
+  this.grid[y-1][x+1].currentActiveNeighbors++;
+  this.grid[y-1][x-1].nextActiveNeighbors++;
+  this.grid[y-1][x].nextActiveNeighbors++;
+  this.grid[y-1][x+1].nextActiveNeighbors++;
+
+  //same row
+  this.grid[y][x-1].currentActiveNeighbors++;
+  this.grid[y][x+1].currentActiveNeighbors++;
+  this.grid[y][x-1].nextActiveNeighbors++;
+  this.grid[y][x+1].nextActiveNeighbors++;
+
+  //row below
+  this.grid[y+1][x-1].currentActiveNeighbors++;
+  this.grid[y+1][x].currentActiveNeighbors++;
+  this.grid[y+1][x+1].currentActiveNeighbors++;
+  this.grid[y+1][x-1].nextActiveNeighbors++;
+  this.grid[y+1][x].nextActiveNeighbors++;
+  this.grid[y+1][x+1].nextActiveNeighbors++;
+
+  //update state
+  this.grid[y][x].currentState = true;
+};
+
+Grid.prototype.clearCell = function(x, y){
+  //simplify interface by taking borders into account internally
+  x++;
+  y++;
+  //update neighbor count of neighbors
+  //row above
+  this.grid[y-1][x-1].currentActiveNeighbors--;
+  this.grid[y-1][x].currentActiveNeighbors--;
+  this.grid[y-1][x+1].currentActiveNeighbors--;
+
+  //same row
+  this.grid[y][x-1].currentActiveNeighbors--;
+  this.grid[y][x+1].currentActiveNeighbors--;
+
+  //row below
+  this.grid[y+1][x-1].currentActiveNeighbors--;
+  this.grid[y+1][x].currentActiveNeighbors--;
+  this.grid[y+1][x+1].currentActiveNeighbors--;
+
+  //update state
+  this.grid[y][x].currentState = false;
+};
+
+Grid.prototype.calculateNextState = function(x, y){
+  x++;
+  y++;
+
+  var i = 0;
+  var cell = this.grid[y][x];
+  cell.nextState = cell.currentState;
+  if ( cell.currentState ){
+    //cell dies, decrement count of neighbor's neighbors by 1
+    if (cell.currentActiveNeighbors < 2 || cell.currentActiveNeighbors > 3){
+      i = -1; 
+      cell.nextState = false;
+    }
+  }
+  //cell is born, increment count of neighbor's neighbors by 1
+  else if (cell.currentActiveNeighbors === 3) {
+    i = 1;
+    cell.nextState = true;
+  }
+  
+  //update neighbor count of neighbors if there was a switch
+  // console.log('x: ', x, '\ny: ', y, '\ni: ', i, '\n');
+  if (i){
+    //row above
+    this.grid[y-1][x-1].nextActiveNeighbors+=i;
+    this.grid[y-1][x].nextActiveNeighbors+=i;
+    this.grid[y-1][x+1].nextActiveNeighbors+=i;
+
+    //same row
+    this.grid[y][x-1].nextActiveNeighbors+=i;
+    this.grid[y][x+1].nextActiveNeighbors+=i;
+
+    //row below
+    this.grid[y+1][x-1].nextActiveNeighbors+=i;
+    this.grid[y+1][x].nextActiveNeighbors+=i;
+    this.grid[y+1][x+1].nextActiveNeighbors+=i;
+  }
+};
+
+Grid.prototype.print = function(){
+  var str = '';
+  for (var i = 1; i < this.dimY-1; i++ ){
+    for (var j = 1; j < this.dimX-1; j++ ){
+      str = str+this.grid[i][j].currentState + ', ';
+    }
+    str = str + '\n';
+  }
+  console.log(str);
+};
+
+Grid.prototype.printNeighbors = function(){
+  var str = '';
+  for (var i = 1; i < this.dimY-1; i++ ){
+    for (var j = 1; j < this.dimX-1; j++ ){
+      str = str+this.grid[i][j].currentActiveNeighbors + ', ';
+    }
+    str = str + '\n';
+  }
+  console.log(str);
+};
+
+Grid.prototype.forEach = function(cb){
+  var i, j;
+  for ( i = 1; i < this.dimY-2; i++ ){
+    for ( j = 1; j < this.dimX-2; j++ ){
+      cb(this.grid[i][j], j-1, i-1);
+    }
+  } 
+};
+
+Grid.prototype.updateCell = function(x, y){
+  var cell = this.grid[y+1][x+1];
+  cell.currentState = cell.nextState;
+  cell.currentActiveNeighbors = cell.nextActiveNeighbors;
+};
+
+Grid.prototype.calculateAll = function(){
+  var that = this;
+  this.forEach(function(cell, x, y){
+    if (cell.currentState || cell.currentActiveNeighbors){
+      that.calculateNextState(x, y);
+    }
+  });
+};
+
+Grid.prototype.updateAll = function(){
+  var that = this;
+  this.forEach(function(cell, x, y){
+      that.updateCell(x, y);
+  });
+};
+
+Grid.prototype.tick = function(){
+  this.calculateAll();
+  this.updateAll();
+};
+
+Grid.prototype.cellState = function(x, y){
+  return this.grid[y+1][x+1].currentState;
+};
+
+
 var GameOfLife = function(x, y){
-  this.xDim = x+2;
-  this.yDim = y+2;
-  this.grid = this.createGrid(this.xDim, this.yDim);
+  this.xDim = x;
+  this.yDim = y;
+  this.grid = new Grid(x, y);
 };
 
 GameOfLife.prototype.createGrid = function(x, y){
-  return Array.apply(null, Array(y)).map(function(){
-    return Array.apply(null, Array(x)).map(function(){
-      return false;
-  });});
+  return new Grid(x, y);
 };
 
 //iter takes arguments (item, xCoord, yCoord)
 GameOfLife.prototype.forEach = function(iter){
   var x, y;
-  for( y = 0; y < this.yDim-2; y++ ){
-    for( x = 0; x < this.xDim-2; x++ ){
-      iter(this.grid[y+1][x+1], x, y);
+  for( y = 0; y < this.yDim; y++ ){
+    for( x = 0; x < this.xDim; x++ ){
+      // console.log('cell state is: ', this.grid.cellState(x, y));
+      iter(this.grid.cellState(x, y), x, y);
     }
   }
 };
@@ -28,60 +204,22 @@ GameOfLife.prototype.randomize = function(percentage){
   this.grid = this.createGrid(this.xDim, this.yDim);
   this.forEach(function(val, x, y){
     if (Math.random() < percentage){
-      that.grid[y][x] = true;
+      that.grid.setCell(x, y);
     }
   });
 };
 
-GameOfLife.prototype.print = function(){
-  console.log('inside of print');
-  var str = '';
-  var neighbors = '';
-  for ( var i = 0; i < this.yDim; i++ ){
-    str = str + this.grid[i].join(', ') + '\n';
-    for (var j = 0; j < this.xDim; j++){
-      neighbors = neighbors + this.getNumNeighbors(j, i) + ', ';
-    }
-    neighbors = neighbors + '\n';
-  }
-  console.log(str);
-  console.log(neighbors);
+GameOfLife.prototype.printState = function(){
+  this.grid.print();
 };
 
-GameOfLife.prototype.setSquare = function(x, y, val){
-  this.grid[y+1][x+1] = val;
+GameOfLife.prototype.printNeighbors = function(){
+  this.grid.printNeighbors();
 };
+
+
+
 
 GameOfLife.prototype.tick = function(){
-  var that = this;
-  var nextGrid = this.createGrid(this.xDim, this.yDim);
-  this.forEach(function(val, x, y){
-    var num = that.getNumNeighbors(x, y);
-    x+=1;
-    y+=1;
-    if (val){
-      if (num >= 2 && num <= 3){
-        nextGrid[y][x] = true;
-      }
-    } else if ( num === 3 ){
-      nextGrid[y][x] = true;
-    }
-  });
-  this.grid = nextGrid;
+  this.grid.tick();
 };
-
-GameOfLife.prototype.getNumNeighbors = function(x, y){
-  x+=1;
-  y+=1;
-  var total = 0;
-  for(var i = -1; i < 2; i++){
-    total += this.grid[y-1][x+i] === true ? 1 : 0; //row above
-    total += this.grid[y+1][x+i] === true ? 1 : 0; //row below
-  }
-  total += this.grid[y][x-1] === true ? 1 : 0; //left side
-  total += this.grid[y][x+1] === true ? 1 : 0; //right side
-  return total;
-};
-
-
-
