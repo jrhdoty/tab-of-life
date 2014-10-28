@@ -215,9 +215,6 @@ GameOfLife.prototype.printNeighbors = function(){
   this.grid.printNeighbors();
 };
 
-
-
-
 GameOfLife.prototype.tick = function(){
   this.grid.tick();
 };

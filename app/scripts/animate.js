@@ -14,9 +14,11 @@
   game.randomize(startPercentage);
 
   (function animate(){
+    //context.fillStyle = 'rgba(142,142,147,.35)';
     context.fillStyle = 'rgba(20,20,20,.35)';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#00CC00';
+
 
     game.forEach(function(val, x, y){
       if (val){
