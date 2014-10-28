@@ -8,7 +8,7 @@
 
   x = Math.floor(canvas.width/3); 
   y = Math.floor(canvas.height/3);
-  startPercentage = 0.2;
+  startPercentage = 0.17;
 
   game = new GameOfLife(x, y);
   game.randomize(startPercentage);

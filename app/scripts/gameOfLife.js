@@ -97,7 +97,6 @@ Grid.prototype.calculateNextState = function(x, y){
   }
   
   //update neighbor count of neighbors if there was a switch
-  // console.log('x: ', x, '\ny: ', y, '\ni: ', i, '\n');
   if (i){
     //row above
     this.grid[y-1][x-1].nextActiveNeighbors+=i;
@@ -193,7 +192,6 @@ GameOfLife.prototype.forEach = function(iter){
   var x, y;
   for( y = 0; y < this.yDim; y++ ){
     for( x = 0; x < this.xDim; x++ ){
-      // console.log('cell state is: ', this.grid.cellState(x, y));
       iter(this.grid.cellState(x, y), x, y);
     }
   }
